@@ -1,0 +1,16 @@
+# Built binary (anchored to repo root — never match cmd/<binary>/ source dirs)
+/k8s-ingress-tls-audit
+/klta
+
+# Go build/test artifacts
+*.test
+*.out
+/dist/
+
+# Editor/OS
+.DS_Store
+.idea/
+*.swp
+
+# Keep test fixtures tracked
+!testdata/**

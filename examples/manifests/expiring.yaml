@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: promo
+  namespace: prod
+spec:
+  rules:
+    - host: soon.example.com
+  tls:
+    - hosts: [soon.example.com]
+      secretName: soon-tls # cert expires in ~10 days -> EXPIRING at --days 30
