@@ -16,9 +16,9 @@ type Options struct {
 
 // Auditor runs TLS checks against a Source.
 type Auditor struct {
-	src  Source
-	opt  Options
-	now  func() time.Time
+	src Source
+	opt Options
+	now func() time.Time
 }
 
 // New builds an Auditor. A zero ExpiryWindow means "never flag as expiring".

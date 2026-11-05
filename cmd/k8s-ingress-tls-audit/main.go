@@ -15,7 +15,7 @@ import (
 )
 
 // version is overridable at build time with -ldflags "-X main.version=...".
-var version = "v0.1.0"
+var version = "v0.2.0"
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
