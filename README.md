@@ -1,7 +1,7 @@
 # k8s-ingress-tls-audit
 
 [![ci](https://github.com/moveeeax/k8s-ingress-tls-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/moveeeax/k8s-ingress-tls-audit/actions/workflows/ci.yml)
-[![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/go-1.26%2B-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Audit Kubernetes **Ingress** resources for TLS misconfiguration — from a live
