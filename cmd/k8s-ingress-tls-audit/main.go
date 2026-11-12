@@ -32,6 +32,7 @@ func newRootCmd() *cobra.Command {
 		days       int
 		jsonOut    bool
 		failOn     string
+		nowFlag    string
 	)
 
 	cmd := &cobra.Command{
@@ -40,6 +41,11 @@ func newRootCmd() *cobra.Command {
 		Version: version,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			clock, err := parseNow(nowFlag)
+			if err != nil {
+				return err
+			}
+
 			var src audit.Source
 			if dir != "" {
 				ms, err := audit.LoadDir(dir)
@@ -55,7 +61,7 @@ func newRootCmd() *cobra.Command {
 				src = ls
 			}
 
-			a := audit.New(src, audit.Options{ExpiryWindow: time.Duration(days) * 24 * time.Hour})
+			a := audit.New(src, audit.Options{ExpiryWindow: time.Duration(days) * 24 * time.Hour, Now: clock})
 			findings, err := a.Run()
 			if err != nil {
 				return err
@@ -87,6 +93,20 @@ func newRootCmd() *cobra.Command {
 	f.StringVarP(&namespace, "namespace", "n", "", "namespace to audit in live mode (default: all namespaces)")
 	f.IntVar(&days, "days", 30, "flag certificates expiring within this many days")
 	f.BoolVar(&jsonOut, "json", false, "emit findings as JSON")
+	f.StringVar(&nowFlag, "now", "", "check certificate expiry as of this RFC 3339 time (e.g. 2026-09-15T00:00:00Z) instead of the current time")
 	f.StringVar(&failOn, "fail-on", "missing_secret", "exit 1 when a finding at or above this severity exists (expiring|missing_tls|host_mismatch|bad_secret|missing_secret|expired)")
 	return cmd
+}
+
+// parseNow turns the --now flag into a clock. An empty value means the current
+// time (nil clock, so audit.New falls back to time.Now).
+func parseNow(s string) (audit.Clock, error) {
+	if s == "" {
+		return nil, nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid --now %q: want an RFC 3339 time such as 2026-09-15T00:00:00Z", s)
+	}
+	return func() time.Time { return t }, nil
 }

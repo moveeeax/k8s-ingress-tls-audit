@@ -8,4 +8,6 @@ spec:
     - host: soon.example.com
   tls:
     - hosts: [soon.example.com]
-      secretName: soon-tls # cert expires in ~10 days -> EXPIRING at --days 30
+      # soon-tls expires 2026-09-24T16:35:54Z: EXPIRING with --now 2026-09-15T00:00:00Z --days 30,
+      # EXPIRED when audited at the current time.
+      secretName: soon-tls

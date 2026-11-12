@@ -55,15 +55,18 @@ Audit local manifests (no cluster needed — great for pre-merge CI):
 k8s-ingress-tls-audit --dir ./manifests --json
 ```
 
-Running against the bundled examples (which contain intentional problems):
+Running against the bundled examples (which contain intentional problems).
+The `soon-tls` certificate expires on 2026-09-24, so the run pins the
+reference time with `--now` to show it inside the 30-day `expiring` window; at
+the current time it is reported as `expired`:
 
 ```console
-$ k8s-ingress-tls-audit --dir examples/manifests --days 30
+$ k8s-ingress-tls-audit --dir examples/manifests --days 30 --now 2026-09-15T00:00:00Z
 SEVERITY        NAMESPACE  INGRESS     HOST                SECRET     DETAIL
 bad_secret      prod       admin       -                   admin-tls  referenced Secret is type Opaque, not kubernetes.io/tls
 missing_secret  prod       api         -                   api-tls    referenced Secret does not exist (controller serves a fake cert)
 missing_tls     prod       api         legacy.example.com  -          host has no covering spec.tls entry (served plaintext)
-expired         prod       promo       -                   soon-tls   certificate expired on 2026-09-24T16:35:54Z
+expiring        prod       promo       -                   soon-tls   certificate expires soon (2026-09-24T16:35:54Z)
 host_mismatch   prod       storefront  www.example.com     shop-tls   certificate does not cover host (SANs: shop.example.com)
 $ echo $?
 1
@@ -78,6 +81,7 @@ $ echo $?
 | `-n`, `--namespace` | *(all)* | Namespace to audit in live mode. |
 | `--days` | `30` | Flag certificates expiring within this many days. |
 | `--json` | `false` | Emit findings as JSON. |
+| `--now` | *(current time)* | Check expiry as of this RFC 3339 time, e.g. `2026-09-15T00:00:00Z`. Useful for reproducible runs, or to see what will have expired by a given date. |
 | `--fail-on` | `missing_secret` | Exit `1` when a finding at or above this severity exists. One of `expiring`, `missing_tls`, `host_mismatch`, `bad_secret`, `missing_secret`, `expired`. |
 
 Severity order (low → high): `expiring` < `missing_tls` < `host_mismatch` <
