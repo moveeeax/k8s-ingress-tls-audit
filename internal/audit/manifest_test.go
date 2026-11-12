@@ -9,7 +9,9 @@ import (
 )
 
 func TestLoadBytes_MultiDoc(t *testing.T) {
-	crt := base64.StdEncoding.EncodeToString(validCert(t))
+	crtPEM, keyPEM := validPair(t, "a.example.com")
+	crt := base64.StdEncoding.EncodeToString(crtPEM)
+	key := base64.StdEncoding.EncodeToString(keyPEM)
 	manifest := `
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -32,7 +34,7 @@ metadata:
 type: kubernetes.io/tls
 data:
   tls.crt: ` + crt + `
-  tls.key: a2V5
+  tls.key: ` + key + `
 `
 	ms, err := LoadBytes("test.yaml", []byte(manifest))
 	if err != nil {
@@ -57,6 +59,9 @@ data:
 	fs, _ := New(ms, Options{ExpiryWindow: 30 * 24 * time.Hour, Now: fixedClock(now(t))}).Run()
 	if f := findByKind(fs, "missing_tls"); f == nil || f.Host != "b.example.com" {
 		t.Fatalf("expected missing_tls for b.example.com, got %+v", fs)
+	}
+	if len(fs) != 1 {
+		t.Fatalf("expected only missing_tls, got %+v", fs)
 	}
 }
 
@@ -112,7 +117,9 @@ data:
 
 func TestLoadDir(t *testing.T) {
 	dir := t.TempDir()
-	crt := base64.StdEncoding.EncodeToString(validCert(t))
+	crtPEM, keyPEM := validPair(t, "a.example.com")
+	crt := base64.StdEncoding.EncodeToString(crtPEM)
+	key := base64.StdEncoding.EncodeToString(keyPEM)
 	files := map[string]string{
 		"ing.yaml": `kind: Ingress
 metadata: {name: web, namespace: prod}
@@ -122,7 +129,7 @@ spec:
 		"sec.yml": `kind: Secret
 metadata: {name: a-tls, namespace: prod}
 type: kubernetes.io/tls
-data: {tls.crt: ` + crt + `, tls.key: a2V5}`,
+data: {tls.crt: ` + crt + `, tls.key: ` + key + `}`,
 		"ignore.txt": "not yaml",
 	}
 	for name, body := range files {
