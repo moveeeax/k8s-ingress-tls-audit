@@ -37,10 +37,12 @@ jobs:
           go build -o klta ./cmd/k8s-ingress-tls-audit
           # examples contain intentional misconfig, so a non-zero exit is expected
           set +e
-          ./klta --dir examples/manifests --days 30
+          ./klta --dir examples/manifests --days 30 --now 2026-09-15T00:00:00Z > audit.txt
           code=$?
           set -e
+          cat audit.txt
           if [ "$code" -ne 1 ]; then
             echo "expected exit 1 from example audit, got $code"
             exit 1
           fi
+          grep -Eq '^expiring +prod +promo .* soon-tls ' audit.txt
