@@ -1,8 +1,10 @@
 package audit
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -114,8 +116,8 @@ func (a *Auditor) auditTLSEntry(ing Ingress, t IngressTLS) []Finding {
 		return []Finding{f}
 	}
 	crt, hasCrt := sec.Data["tls.crt"]
-	_, hasKey := sec.Data["tls.key"]
-	if !hasCrt || len(crt) == 0 || !hasKey {
+	key, hasKey := sec.Data["tls.key"]
+	if !hasCrt || len(crt) == 0 || !hasKey || len(key) == 0 {
 		f := base
 		f.Severity, f.Kind = SeverityBadSecret, "bad_secret"
 		f.Message = "Secret is missing tls.crt and/or tls.key"
@@ -129,7 +131,52 @@ func (a *Auditor) auditTLSEntry(ing Ingress, t IngressTLS) []Finding {
 		f.Message = "tls.crt is not a valid certificate: " + err.Error()
 		return []Finding{f}
 	}
-	return a.certFindings(base, cert)
+	// A key that does not match the leaf makes the controller reject the
+	// Secret, so expiry and host coverage are moot.
+	if _, err := tls.X509KeyPair(crt, key); err != nil {
+		f := base
+		f.Severity, f.Kind = SeverityBadSecret, "bad_secret"
+		f.Message = "tls.crt and tls.key do not form a valid key pair: " + err.Error()
+		return []Finding{f}
+	}
+	out := a.certFindings(base, cert)
+	return append(out, hostFindings(base, t.Hosts, cert)...)
+}
+
+// hostFindings reports every spec.tls host the leaf certificate does not
+// cover. Matching follows crypto/x509 VerifyHostname: SANs only (the Subject
+// CN is ignored, as browsers do), one-label wildcards, and IP hosts against IP
+// SANs. A wildcard Ingress host such as "*.example.com" needs that exact SAN.
+func hostFindings(base Finding, hosts []string, cert *x509.Certificate) []Finding {
+	var out []Finding
+	seen := map[string]bool{}
+	for _, h := range hosts {
+		if h == "" || seen[h] {
+			continue
+		}
+		seen[h] = true
+		if cert.VerifyHostname(h) == nil {
+			continue
+		}
+		f := base
+		f.Host = h
+		f.Severity, f.Kind = SeverityHostMismatch, "host_mismatch"
+		f.Message = "certificate does not cover host (" + describeSANs(cert) + ")"
+		out = append(out, f)
+	}
+	return out
+}
+
+// describeSANs lists the DNS and IP SANs of cert for a finding's detail.
+func describeSANs(cert *x509.Certificate) string {
+	sans := append([]string(nil), cert.DNSNames...)
+	for _, ip := range cert.IPAddresses {
+		sans = append(sans, ip.String())
+	}
+	if len(sans) == 0 {
+		return "no DNS or IP SANs"
+	}
+	return "SANs: " + strings.Join(sans, ", ")
 }
 
 func (a *Auditor) certFindings(base Finding, cert *x509.Certificate) []Finding {

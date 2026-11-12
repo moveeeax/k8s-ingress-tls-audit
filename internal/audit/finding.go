@@ -12,6 +12,8 @@ const (
 	SeverityExpiring
 	// SeverityMissingTLS: a host has no covering spec.tls entry.
 	SeverityMissingTLS
+	// SeverityHostMismatch: a spec.tls host is not covered by the cert's SANs.
+	SeverityHostMismatch
 	// SeverityBadSecret: the referenced Secret exists but is unusable.
 	SeverityBadSecret
 	// SeverityMissingSecret: the referenced Secret does not exist.
@@ -24,6 +26,7 @@ var severityNames = map[Severity]string{
 	SeverityOK:            "ok",
 	SeverityExpiring:      "expiring",
 	SeverityMissingTLS:    "missing_tls",
+	SeverityHostMismatch:  "host_mismatch",
 	SeverityBadSecret:     "bad_secret",
 	SeverityMissingSecret: "missing_secret",
 	SeverityExpired:       "expired",
@@ -51,7 +54,7 @@ func ParseSeverity(s string) (Severity, error) {
 	if v, ok := severityByName[s]; ok && v != SeverityOK {
 		return v, nil
 	}
-	return SeverityOK, fmt.Errorf("unknown severity %q (want one of: expiring, missing_tls, bad_secret, missing_secret, expired)", s)
+	return SeverityOK, fmt.Errorf("unknown severity %q (want one of: expiring, missing_tls, host_mismatch, bad_secret, missing_secret, expired)", s)
 }
 
 // Finding is a single problem discovered on an Ingress.

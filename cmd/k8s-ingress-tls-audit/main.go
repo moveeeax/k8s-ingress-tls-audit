@@ -87,6 +87,6 @@ func newRootCmd() *cobra.Command {
 	f.StringVarP(&namespace, "namespace", "n", "", "namespace to audit in live mode (default: all namespaces)")
 	f.IntVar(&days, "days", 30, "flag certificates expiring within this many days")
 	f.BoolVar(&jsonOut, "json", false, "emit findings as JSON")
-	f.StringVar(&failOn, "fail-on", "missing_secret", "exit 1 when a finding at or above this severity exists (expiring|missing_tls|bad_secret|missing_secret|expired)")
+	f.StringVar(&failOn, "fail-on", "missing_secret", "exit 1 when a finding at or above this severity exists (expiring|missing_tls|host_mismatch|bad_secret|missing_secret|expired)")
 	return cmd
 }
